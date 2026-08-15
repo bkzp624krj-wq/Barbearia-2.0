@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Barbearia do Vini e Matheus | Agendamento Online</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --bg-main: #0c0e12;
+      --bg-card: #141820;
+      --bg-card-hover: #1b212c;
+      --border-color: #242c3b;
+      --gold-primary: #c5a059;
+      --gold-light: #dfba73;
+      --text-white: #f8fafc;
+      --text-muted: #94a3b8;
+      --danger: #ef4444;
+      --success: #10b981;
+      --radius: 12px;
+      --font-main: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background-color: var(--bg-main); color: var(--text-white); font-family: var(--font-main); line-height: 1.6; overflow-x: hidden; }
+    .container { width: 100%; max-width: 1140px; margin: 0 auto; padding: 0 20px; }
+    h1, h2, h3 { font-weight: 700; line-height: 1.2; color: var(--text-white); }
+    h1 { font-size: 2.3rem; } h2 { font-size: 1.8rem; } h3 { font-size: 1.2rem; }
+    p { color: var(--text-muted); }
+    button { font-family: inherit; cursor: pointer; border: none; outline: none; transition: all 0.2s ease; touch-action: manipulation; }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--gold-primary), var(--gold-light));
+      color: #0c0e12; font-weight: 700; padding: 14px 28px; border-radius: var(--radius);
+      display: inline-flex; align-items: center; justify-content: center; text-decoration: none; font-size: 1rem;
+    }
+    .btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+    .btn-secondary {
+      background: var(--bg-card); color: var(--text-white); border: 1px solid var(--border-color);
+      font-weight: 600; padding: 14px 28px; border-radius: var(--radius); display: inline-flex; align-items: center; justify-content: center; text-decoration: none;
+    }
+    .btn-secondary:hover { background: var(--bg-card-hover); border-color: var(--gold-primary); }
+    .btn-outline {
+      background: transparent; color: var(--gold-light); border: 1px solid var(--gold-primary);
+      font-weight: 600; padding: 12px 20px; border-radius: var(--radius);
+    }
+    .btn-outline:hover { background: var(--gold-primary); color: #0c0e12; }
+    .btn-block { width: 100%; }
+    .btn-lg { padding: 16px 32px; font-size: 1.05rem; }
+
+    /* Navbar */
+    .navbar { position: sticky; top: 0; z-index: 100; background: rgba(12, 14, 18, 0.95); backdrop-filter: blur(12px); border-bottom: 1px solid var(--border-color); padding: 16px 0; }
+    .nav-content { display: flex; justify-content: space-between; align-items: center; }
+    .brand-logo { font-weight: 800; font-size: 1.25rem; color: var(--text-white); text-decoration: none; }
+    .brand-logo span { color: var(--gold-primary); }
+    .nav-links { display: flex; gap: 20px; align-items: center; }
+    .nav-links a { color: var(--text-muted); text-decoration: none; font-size: 0.95rem; font-weight: 500; }
+    .nav-links a:hover { color: var(--gold-light); }
+    .admin-badge-btn { background: #1e293b; color: var(--gold-light) !important; padding: 6px 12px; border-radius: 8px; font-size: 0.85rem !important; border: 1px solid #334155; }
+
+    /* Hero */
+    .hero-section { padding: 50px 0 70px; }
+    .hero-container { display: grid; grid-template-columns: 1.1fr 0.9fr; gap: 40px; align-items: center; }
+    .badge-gold { color: var(--gold-primary); text-transform: uppercase; font-size: 0.85rem; font-weight: 700; letter-spacing: 1px; margin-bottom: 12px; display: inline-block; }
+    .hero-text h1 { margin-bottom: 16px; }
+    .hero-text p { font-size: 1.05rem; margin-bottom: 28px; }
+    .hero-actions { display: flex; gap: 16px; flex-wrap: wrap; }
+    .hero-banner img { width: 100%; height: 380px; object-fit: cover; border-radius: 16px; border: 1px solid var(--border-color); }
+
+    /* Sections */
+    .section { padding: 70px 0; }
+    .section-dark { background-color: #080a0d; }
+    .section-header { text-align: center; max-width: 600px; margin: 0 auto 40px; }
+    .section-header h2 { margin-bottom: 10px; }
+
+    /* Barbers */
+    .barbers-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 28px; }
+    .barber-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; overflow: hidden; }
+    .barber-img { width: 100%; height: 270px; object-fit: cover; }
+    .barber-info { padding: 22px; }
+    .barber-info h3 { margin-bottom: 6px; }
+    .barber-info p { margin-bottom: 18px; font-size: 0.9rem; }
+
+    /* Services */
+    .services-table-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 24px; }
+    .service-box { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; padding: 28px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+    .service-box.featured { border-color: var(--gold-primary); background: #161b24; }
+    .featured-badge { position: absolute; top: -12px; right: 24px; background: var(--gold-primary); color: #0c0e12; font-size: 0.75rem; font-weight: 800; padding: 4px 10px; border-radius: 20px; text-transform: uppercase; }
+    .service-box-header { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 12px; }
+    .service-box-header .price { color: var(--gold-light); font-size: 1.4rem; font-weight: 800; }
+    .service-box p { margin-bottom: 24px; font-size: 0.95rem; }
+
+    /* Info */
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 24px; }
+    .info-card { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 14px; padding: 24px; }
+    .info-card h3 { margin-bottom: 8px; font-size: 1.1rem; }
+
+    /* Footer */
+    .footer { border-top: 1px solid var(--border-color); padding: 30px 0; text-align: center; }
+    .footer-content { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+
+    /* Modal Agendamento */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(4, 6, 8, 0.88); backdrop-filter: blur(8px); display: flex; align-items: flex-end; justify-content: center; opacity: 0; visibility: hidden; transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); z-index: 1000; }
+    .modal-overlay.active { opacity: 1; visibility: visible; }
+    .modal-window { background: var(--bg-card); width: 100%; max-width: 540px; max-height: 92vh; border-top-left-radius: 24px; border-top-right-radius: 24px; border: 1px solid var(--border-color); border-bottom: none; display: flex; flex-direction: column; transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1); padding-bottom: env(safe-area-inset-bottom, 20px); }
+    .modal-overlay.active .modal-window { transform: translateY(0); }
+
+    @media (min-width: 640px) {
+      .modal-overlay { align-items: center; padding: 20px; }
+      .modal-window { border-radius: 20px; border-bottom: 1px solid var(--border-color); max-height: 85vh; }
+    }
+
+    .modal-header { padding: 18px 24px 12px; display: flex; justify-content: space-between; align-items: center; }
+    .btn-icon { background: transparent; color: var(--text-muted); font-size: 1.5rem; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; border-radius: 50%; }
+    .btn-icon:hover { color: var(--text-white); background: var(--bg-card-hover); }
+    .step-indicators { display: flex; gap: 8px; padding: 0 24px 14px; }
+    .step-indicator-dot { flex: 1; height: 4px; background: var(--border-color); border-radius: 4px; transition: background 0.3s ease; }
+    .step-indicator-dot.active { background: var(--gold-primary); }
+    .step-indicator-dot.completed { background: var(--gold-light); }
+    .error-alert { background: rgba(239, 68, 68, 0.15); border-left: 4px solid var(--danger); color: #fca5a5; padding: 12px 18px; font-size: 0.9rem; margin: 0 24px 12px; border-radius: 4px; display: none; }
+    .error-alert.visible { display: block; }
+    .modal-body { padding: 10px 24px 26px; overflow-y: auto; }
+
+    .selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .selection-card { background: var(--bg-main); border: 2px solid var(--border-color); border-radius: 14px; cursor: pointer; overflow: hidden; transition: all 0.2s ease; text-align: center; }
+    .selection-card:hover { border-color: var(--gold-primary); }
+    .selection-card.selected { border-color: var(--gold-primary); background: #1a1e28; }
+    .selection-card-img { width: 100%; height: 120px; object-fit: cover; }
+    .selection-card-body { padding: 12px; }
+    .selection-card-body h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .selection-card-body p { font-size: 0.75rem; }
+
+    .selection-list { display: flex; flex-direction: column; gap: 12px; }
+    .selection-list-item { background: var(--bg-main); border: 2px solid var(--border-color); border-radius: 12px; padding: 16px; display: flex; justify-content: space-between; align-items: center; cursor: pointer; }
+    .selection-list-item:hover { border-color: var(--gold-primary); }
+    .selection-list-item.selected { border-color: var(--gold-primary); background: #1a1e28; }
+    .service-info strong { display: block; font-size: 1rem; }
+    .service-info span { font-size: 0.8rem; color: var(--text-muted); }
+    .service-price { font-weight: 700; color: var(--gold-light); font-size: 1.1rem; }
+
+    .custom-date-input, .custom-text-input { width: 100%; background: var(--bg-main); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 15px; color: var(--text-white); font-size: 1.1rem; margin: 12px 0 20px; font-family: inherit; }
+    .custom-date-input:focus, .custom-text-input:focus { border-color: var(--gold-primary); outline: none; }
+    .input-label { font-size: 0.95rem; color: var(--text-muted); font-weight: 600; }
+
+    .time-slots-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .time-slot-btn { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 6px; color: var(--text-white); display: flex; flex-direction: column; align-items: center; }
+    .time-slot-btn span { font-size: 1.05rem; font-weight: 700; }
+    .time-slot-btn small { font-size: 0.72rem; color: var(--text-muted); margin-top: 2px; }
+    .time-slot-btn.available:hover { border-color: var(--gold-primary); background: var(--bg-card-hover); }
+    .time-slot-btn.available.selected { background: var(--gold-primary); color: #0c0e12; border-color: var(--gold-primary); }
+    .time-slot-btn.available.selected small { color: #0c0e12; }
+    .time-slot-btn.disabled { opacity: 0.35; cursor: not-allowed; background: #080a0d; }
+
+    .summary-card { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 14px; padding: 20px; }
+    .summary-row { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 0.95rem; }
+    .summary-row span { color: var(--text-muted); }
+    .summary-divider { height: 1px; background: var(--border-color); margin: 16px 0; }
+    .summary-row.total { font-size: 1.2rem; color: var(--gold-light); margin-bottom: 22px; }
+
+    .success-card { text-align: center; padding: 10px 0; }
+    .success-icon { width: 60px; height: 60px; background: rgba(16, 185, 129, 0.15); color: var(--success); font-size: 2rem; display: flex; align-items: center; justify-content: center; border-radius: 50%; margin: 0 auto 14px; }
+    .receipt-box { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 12px; padding: 16px; text-align: left; margin-bottom: 22px; font-size: 0.9rem; }
+    .receipt-box div { margin-bottom: 6px; }
+
+    .loader-container { text-align: center; padding: 35px 0; }
+    .spinner { width: 34px; height: 34px; border: 3px solid var(--border-color); border-top-color: var(--gold-primary); border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 14px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Modal Admin */
+    .admin-slots-table { display: flex; flex-direction: column; gap: 10px; max-height: 400px; overflow-y: auto; margin-top: 16px; }
+    .admin-slot-row { background: var(--bg-main); border: 1px solid var(--border-color); border-radius: 10px; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+    .admin-slot-row.status-livre { border-left: 4px solid var(--text-muted); }
+    .admin-slot-row.status-confirmado { border-left: 4px solid var(--gold-primary); background: #161b24; }
+    .admin-slot-row.status-bloqueado { border-left: 4px solid var(--danger); }
+    .slot-time { font-size: 1.1rem; font-weight: 800; min-width: 60px; }
+    .slot-client-info { flex: 1; }
+    .slot-client-info strong { display: block; font-size: 0.95rem; }
+    .slot-client-info span { font-size: 0.8rem; color: var(--text-muted); }
+    .btn-action-cancel, .btn-action-block, .btn-action-unblock { padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+    .btn-action-cancel { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
+    .btn-action-block { background: #1e293b; color: var(--text-muted); border: 1px solid var(--border-color); }
+    .btn-action-unblock { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .barber-toggle-buttons { display: flex; gap: 8px; margin: 10px 0; }
+    .btn-toggle { flex: 1; background: var(--bg-main); color: var(--text-muted); border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font-weight: 700; }
+    .btn-toggle.active { background: var(--gold-primary); color: #0c0e12; border-color: var(--gold-primary); }
+
+    @media (max-width: 768px) {
+      .hero-container { grid-template-columns: 1fr; text-align: center; }
+      .hero-actions { justify-content: center; }
+      .nav-links { display: none; }
+      .time-slots-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+  </style>
+</head>
+<body>
+
+  <header class="navbar">
+    <div class="container nav-content">
+      <a href="#" class="brand-logo"><span>V&M</span> BARBEARIA</a>
+      <nav class="nav-links">
+        <a href="#barbeiros">Barbeiros</a>
+        <a href="#servicos">Serviços</a>
+        <a href="#sobre">Unidade</a>
+        <button id="btn-open-admin-modal" class="admin-badge-btn">🔒 Área dos Barbeiros</button>
+      </nav>
+      <button class="btn-primary btn-open-booking">AGENDAR HORÁRIO</button>
+    </div>
+  </header>
+
+  <section class="hero-section">
+    <div class="container hero-container">
+      <div class="hero-text">
+        <span class="badge-gold">Cortes de Elite & Barboterapia</span>
+        <h1>Excelência, Tradição & Estilo Masculino</h1>
+        <p>Agende seu atendimento online com os barbeiros Vini e Matheus. Experiência de alto padrão sem fila de espera.</p>
+        <div class="hero-actions">
+          <button class="btn-primary btn-lg btn-open-booking">AGENDAR HORÁRIO</button>
+          <a href="#servicos" class="btn-secondary btn-lg">Ver Serviços</a>
+        </div>
+      </div>
+      <div class="hero-banner">
+        <img src="https://images.unsplash.com/photo-1585747860715-2ba37e788b70?w=800&auto=format&fit=crop&q=80" alt="Barbearia" />
+      </div>
+    </div>
+  </section>
+
+  <section id="barbeiros" class="section">
+    <div class="container">
+      <div class="section-header">
+        <h2>Nossos Especialistas</h2>
+        <p>Escolha o barbeiro de sua preferência para um atendimento exclusivo.</p>
+      </div>
+      <div class="barbers-grid">
+        <div class="barber-card">
+          <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80" alt="Vini" class="barber-img" />
+          <div class="barber-info">
+            <h3>Vini</h3>
+            <p>Especialista em Degradê, Texturização & Barba Terapia</p>
+            <button class="btn-outline btn-block btn-open-booking" data-preselect="Vini">Agendar com Vini</button>
+          </div>
+        </div>
+        <div class="barber-card">
+          <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80" alt="Matheus" class="barber-img" />
+          <div class="barber-info">
+            <h3>Matheus</h3>
+            <p>Mestre em Cortes Clássicos, Navalhado & Visagismo</p>
+            <button class="btn-outline btn-block btn-open-booking" data-preselect="Matheus">Agendar com Matheus</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="servicos" class="section section-dark">
+    <div class="container">
+      <div class="section-header">
+        <h2>Serviços & Preços</h2>
+        <p>Tabela oficial e transparente da Barbearia do Vini e Matheus.</p>
+      </div>
+      <div class="services-table-grid">
+        <div class="service-box">
+          <div class="service-box-header">
+            <h3>Corte de Cabelo</h3>
+            <span class="price">R$ 35,00</span>
+          </div>
+          <p>Degradê, social, militar ou navalhado com lavagem e finalização.</p>
+          <button class="btn-secondary btn-block btn-open-booking">Agendar Corte</button>
+        </div>
+        <div class="service-box">
+          <div class="service-box-header">
+            <h3>Barboterapia</h3>
+            <span class="price">R$ 25,00</span>
+          </div>
+          <p>Toalha quente, óleos essenciais, massagem facial e navalha afiada.</p>
+          <button class="btn-secondary btn-block btn-open-booking">Agendar Barba</button>
+        </div>
+        <div class="service-box featured">
+          <div class="featured-badge">Mais Escolhido</div>
+          <div class="service-box-header">
+            <h3>Corte + Barba</h3>
+            <span class="price">R$ 55,00</span>
+          </div>
+          <p>O combo perfeito para renovar totalmente seu visual com economia.</p>
+          <button class="btn-primary btn-block btn-open-booking">Agendar Combo</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="sobre" class="section">
+    <div class="container info-grid">
+      <div class="info-card">
+        <h3>📍 Localização</h3>
+        <p>Rua Principal, 123 - Centro</p>
+      </div>
+      <div class="info-card">
+        <h3>⏰ Horário</h3>
+        <p>Segunda a Sábado: 09:00 às 18:00</p>
+      </div>
+      <div class="info-card">
+        <h3>💳 Pagamentos</h3>
+        <p>PIX, Dinheiro, Cartão Débito/Crédito</p>
+      </div>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="container footer-content">
+      <p>&copy; 2026 Barbearia do Vini e Matheus. Todos os direitos reservados.</p>
+      <button id="btn-footer-admin" class="btn-outline" style="font-size:0.8rem; padding:6px 12px;">🔒 Painel Barbeiros</button>
+    </div>
+  </footer>
+
+  <!-- MODAL DE AGENDAMENTO -->
+  <div id="booking-modal" class="modal-overlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <button id="btn-wizard-back" class="btn-icon">&larr;</button>
+        <h2 id="wizard-step-title">Escolha o Barbeiro</h2>
+        <button id="btn-close-modal" class="btn-icon">&times;</button>
+      </div>
+      <div class="step-indicators">
+        <div class="step-indicator-dot active"></div>
+        <div class="step-indicator-dot"></div>
+        <div class="step-indicator-dot"></div>
+        <div class="step-indicator-dot"></div>
+        <div class="step-indicator-dot"></div>
+        <div class="step-indicator-dot"></div>
+      </div>
+      <div id="wizard-error-box" class="error-alert"></div>
+      <div id="wizard-step-content" class="modal-body"></div>
+    </div>
+  </div>
+
+  <!-- MODAL ADMIN -->
+  <div id="admin-modal" class="modal-overlay">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>Agenda dos Barbeiros</h2>
+        <button id="btn-close-admin-modal" class="btn-icon">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div id="admin-login-box">
+          <p style="margin-bottom:12px; font-size:0.9rem;">Digite a senha de acesso dos barbeiros:</p>
+          <div id="admin-login-err" class="error-alert"></div>
+          <input type="password" id="admin-pass-input" class="custom-text-input" placeholder="Senha do Admin" style="margin-bottom:16px;" autofocus />
+          <button id="btn-do-login" class="btn-primary btn-block">Acessar Agenda</button>
+        </div>
+
+        <div id="admin-view-box" style="display:none;">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+            <span style="font-size:0.85rem; color:var(--gold-light);">✓ Painel Liberado</span>
+            <button id="btn-do-logout" class="btn-outline" style="padding:4px 8px; font-size:0.75rem;">Sair</button>
+          </div>
+
+          <label class="input-label">Data da Agenda:</label>
+          <input type="date" id="admin-date-select" class="custom-date-input" style="margin-top:6px; margin-bottom:12px;" />
+
+          <label class="input-label">Barbeiro:</label>
+          <div class="barber-toggle-buttons">
+            <button class="btn-toggle active" data-admin-barber="Vini">Vini</button>
+            <button class="btn-toggle" data-admin-barber="Matheus">Matheus</button>
+          </div>
+
+          <div id="admin-slots-container" class="admin-slots-table"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CONFIG = {
+      SUPABASE_URL: "https://rmwkvctjriofggghrpvs.supabase.co",
+      SUPABASE_ANON_KEY: "sb_publishable_sisE8yB8jeBOzL3BWnclVA_APG5Ejgk",
+      ADMIN_PASS: "admin123",
+      
+      BARBERS: [
+        { name: "Vini", role: "Especialista em Degradê & Barba", photo: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=500&auto=format&fit=crop&q=80" },
+        { name: "Matheus", role: "Mestre em Cortes Clássicos & Visagismo", photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=500&auto=format&fit=crop&q=80" }
+      ],
+      SERVICES: [
+        { id: "corte", name: "Corte de Cabelo", price: "R$ 35,00", duration: "30 min" },
+        { id: "barba", name: "Barboterapia", price: "R$ 25,00", duration: "30 min" },
+        { id: "combo", name: "Corte + Barba", price: "R$ 55,00", duration: "60 min" }
+      ],
+      AVAILABLE_SLOTS: [
+        "09:00", "09:30", "10:00", "10:30", "11:00", "11:30",
+        "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", 
+        "17:00", "17:30", "18:00"
+      ]
+    };
+
+    const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+
+    const booking = { step: 1, barber: null, service: null, date: null, slot: null, name: "" };
+    const bookingModal = document.getElementById("booking-modal");
+    const closeBookingBtn = document.getElementById("btn-close-modal");
+    const wizardBackBtn = document.getElementById("btn-wizard-back");
+    const wizardTitle = document.getElementById("wizard-step-title");
+    const wizardContent = document.getElementById("wizard-step-content");
+    const wizardError = document.getElementById("wizard-error-box");
+    const stepDots = document.querySelectorAll(".step-indicator-dot");
+
+    document.querySelectorAll(".btn-open-booking").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const pre = btn.getAttribute("data-preselect");
+        booking.step = 1;
+        booking.barber = pre ? CONFIG.BARBERS.find(b => b.name === pre) : null;
+        booking.service = null; booking.date = null; booking.slot = null; booking.name = "";
+        hideError();
+        if (booking.barber) { renderStep(2); } else { renderStep(1); }
+        bookingModal.classList.add("active");
+        document.body.style.overflow = "hidden";
+      });
+    });
+
+    closeBookingBtn.addEventListener("click", closeModal);
+    wizardBackBtn.addEventListener("click", () => {
+      if (booking.step > 1 && booking.step < 7) renderStep(booking.step - 1);
+    });
+
+    function closeModal() {
+      bookingModal.classList.remove("active");
+      document.body.style.overflow = "auto";
+    }
+
+    function showError(msg) {
+      wizardError.innerText = msg;
+      wizardError.classList.add("visible");
+    }
+
+    function hideError() {
+      wizardError.innerText = "";
+      wizardError.classList.remove("visible");
+    }
+
+    function renderStep(step) {
+      booking.step = step;
+      hideError();
+      stepDots.forEach((dot, i) => {
+        dot.classList.toggle("active", i + 1 === step);
+        dot.classList.toggle("completed", i + 1 < step);
+      });
+      wizardBackBtn.style.visibility = (step === 1 || step === 7) ? "hidden" : "visible";
+
+      if (step === 1) {
+        wizardTitle.innerText = "Escolha o Barbeiro";
+        wizardContent.innerHTML = `
+          <div class="selection-grid">
+            ${CONFIG.BARBERS.map(b => `
+              <div class="selection-card ${booking.barber?.name === b.name ? 'selected' : ''}" onclick="selectBarber('${b.name}')">
+                <img src="${b.photo}" class="selection-card-img" />
+                <div class="selection-card-body">
+                  <h3>${b.name}</h3>
+                  <p>${b.role}</p>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (step === 2) {
+        wizardTitle.innerText = "Escolha o Serviço";
+        wizardContent.innerHTML = `
+          <div class="selection-list">
+            ${CONFIG.SERVICES.map(s => `
+              <div class="selection-list-item ${booking.service?.id === s.id ? 'selected' : ''}" onclick="selectService('${s.id}')">
+                <div class="service-info">
+                  <strong>${s.name}</strong>
+                  <span>Tempo: ${s.duration}</span>
+                </div>
+                <div class="service-price">${s.price}</div>
+              </div>
+            `).join('')}
+          </div>
+        `;
+      } else if (step === 3) {
+        const today = new Date().toISOString().split('T')[0];
+        wizardTitle.innerText = "Selecione a Data";
+        wizardContent.innerHTML = `
+          <div>
+            <label class="input-label">Dia do atendimento:</label>
+            <input type="date" id="booking-date-input" class="custom-date-input" min="${today}" value="${booking.date || today}" />
+            <button class="btn-primary btn-block" onclick="confirmDate()">Ver Horários Disponíveis</button>
+          </div>
+        `;
+      } else if (step === 4) {
+        wizardTitle.innerText = "Escolha o Horário";
+        wizardContent.innerHTML = `<div class="loader-container"><div class="spinner"></div><p>Consultando horários no banco...</p></div>`;
+        loadSlots();
+      } else if (step === 5) {
+        wizardTitle.innerText = "Informe seu Nome";
+        wizardContent.innerHTML = `
+          <div>
+            <label class="input-label">Como podemos te chamar?</label>
+            <input type="text" id="client-name-input" class="custom-text-input" placeholder="Ex: João da Silva" value="${booking.name}" autofocus />
+            <button class="btn-primary btn-block" onclick="confirmName()">Revisar Agendamento</button>
+          </div>
+        `;
+        setTimeout(() => document.getElementById("client-name-input")?.focus(), 100);
+      } else if (step === 6) {
+        const [y, m, d] = booking.date.split('-');
+        wizardTitle.innerText = "Resumo do Agendamento";
+        wizardContent.innerHTML = `
+          <div class="summary-card">
+            <div class="summary-row"><span>Cliente:</span><strong>${booking.name}</strong></div>
+            <div class="summary-row"><span>Barbeiro:</span><strong>${booking.barber.name}</strong></div>
+            <div class="summary-row"><span>Serviço:</span><strong>${booking.service.name}</strong></div>
+            <div class="summary-row"><span>Data:</span><strong>${d}/${m}/${y}</strong></div>
+            <div class="summary-row"><span>Horário:</span><strong>${booking.slot}</strong></div>
+            <div class="summary-divider"></div>
+            <div class="summary-row total"><span>Valor:</span><strong>${booking.service.price}</strong></div>
+            <button id="btn-save-booking" class="btn-primary btn-block btn-lg" onclick="saveBooking()">CONFIRMAR AGENDAMENTO</button>
+          </div>
+        `;
+      } else if (step === 7) {
+        const [y, m, d] = booking.date.split('-');
+        wizardTitle.innerText = "Agendamento Confirmado";
+        wizardContent.innerHTML = `
+          <div class="success-card">
+            <div class="success-icon">✓</div>
+            <h3>✓ AGENDAMENTO CONFIRMADO</h3>
+            <p style="margin-bottom:16px;">${booking.name}, seu horário foi reservado!</p>
+            <div class="receipt-box">
+              <div><strong>Barbeiro:</strong> ${booking.barber.name}</div>
+              <div><strong>Serviço:</strong> ${booking.service.name}</div>
+              <div><strong>Data:</strong> ${d}/${m}/${y}</div>
+              <div><strong>Horário:</strong> ${booking.slot}</div>
+              <div><strong>Valor:</strong> ${booking.service.price}</div>
+            </div>
+            <button class="btn-primary btn-block" onclick="closeModal()">Concluir</button>
+          </div>
+        `;
+      }
+    }
+
+    window.selectBarber = function(name) { booking.barber = CONFIG.BARBERS.find(b => b.name === name); renderStep(2); };
+    window.selectService = function(id) { booking.service = CONFIG.SERVICES.find(s => s.id === id); renderStep(3); };
+    window.confirmDate = function() {
+      const val = document.getElementById("booking-date-input").value;
+      if (!val) { showError("Por favor, selecione uma data válida."); return; }
+      booking.date = val; renderStep(4);
+    };
+
+    async function loadSlots() {
+      try {
+        const { data, error } = await sb
+          .from('Agendamento')
+          .select('horario')
+          .eq('barbeiro', booking.barber.name)
+          .eq('data_agendamento', booking.date)
+          .in('status', ['confirmado', 'bloqueado']);
+
+        if (error) throw error;
+        const occupied = (data || []).map(r => r.horario);
+        let html = `<div class="time-slots-grid">`;
+        CONFIG.AVAILABLE_SLOTS.forEach(slot => {
+          if (occupied.includes(slot)) {
+            html += `<button class="time-slot-btn disabled" disabled><span>${slot}</span><small>Ocupado</small></button>`;
+          } else {
+            html += `<button class="time-slot-btn available ${booking.slot === slot ? 'selected' : ''}" onclick="selectSlot('${slot}')"><span>${slot}</span><small>Disponível</small></button>`;
+          }
+        });
+        html += `</div>`;
+        wizardContent.innerHTML = html;
+      } catch (err) {
+        wizardContent.innerHTML = `<div class="error-alert visible">Não foi possível carregar os horários. Tente novamente.</div><button class="btn-secondary btn-block" onclick="renderStep(4)" style="margin-top:10px;">Recarregar</button>`;
+      }
+    }
+
+    window.selectSlot = function(slot) { booking.slot = slot; renderStep(5); };
+    window.confirmName = function() {
+      const val = document.getElementById("client-name-input").value.trim();
+      if (!val) { showError("Digite seu nome para continuar."); return; }
+      booking.name = val; renderStep(6);
+    };
+
+    window.saveBooking = async function() {
+      const btn = document.getElementById("btn-save-booking");
+      btn.disabled = true; btn.innerText = "Salvando agendamento..."; hideError();
+      try {
+        const { data: existing, error: checkErr } = await sb
+          .from('Agendamento')
+          .select('id')
+          .eq('barbeiro', booking.barber.name)
+          .eq('data_agendamento', booking.date)
+          .eq('horario', booking.slot)
+          .in('status', ['confirmado', 'bloqueado']);
+
+        if (checkErr) throw checkErr;
+        if (existing && existing.length > 0) {
+          showError("Esse horário acabou de ser reservado. Escolha outro horário.");
+          btn.disabled = false; btn.innerText = "CONFIRMAR AGENDAMENTO"; return;
+        }
+
+        const { error: insertErr } = await sb
+          .from('Agendamento')
+          .insert([{
+            nome_cliente: booking.name,
+            barbeiro: booking.barber.name,
+            servico: booking.service.name,
+            data_agendamento: booking.date,
+            horario: booking.slot,
+            status: 'confirmado'
+          }]);
+
+        if (insertErr) throw insertErr;
+        renderStep(7);
+      } catch (err) {
+        showError("Não foi possível confirmar seu agendamento. Tente novamente.");
+        btn.disabled = false; btn.innerText = "CONFIRMAR AGENDAMENTO";
+      }
+    };
+
+    const adminModal = document.getElementById("admin-modal");
+    const openAdminBtns = [document.getElementById("btn-open-admin-modal"), document.getElementById("btn-footer-admin")];
+    const closeAdminBtn = document.getElementById("btn-close-admin-modal");
+    let adminBarber = "Vini";
+    let adminDate = new Date().toISOString().split('T')[0];
+
+    openAdminBtns.forEach(b => {
+      if (b) b.addEventListener("click", () => {
+        adminModal.classList.add("active");
+        document.body.style.overflow = "hidden";
+        if (sessionStorage.getItem("admin_logged") === "true") {
+          showAdminDashboard();
+        } else {
+          document.getElementById("admin-login-box").style.display = "block";
+          document.getElementById("admin-view-box").style.display = "none";
+        }
+      });
+    });
+
+    closeAdminBtn.addEventListener("click", () => {
+      adminModal.classList.remove("active");
+      document.body.style.overflow = "auto";
+    });
+
+    document.getElementById("btn-do-login").addEventListener("click", () => {
+      const pass = document.getElementById("admin-pass-input").value;
+      const errBox = document.getElementById("admin-login-err");
+      
+      if (pass === CONFIG.ADMIN_PASS) {
+        errBox.classList.remove("visible");
+        sessionStorage.setItem("admin_logged", "true");
+        showAdminDashboard();
+      } else {
+        errBox.innerText = "Senha incorreta.";
+        errBox.classList.add("visible");
+      }
+    });
+
+    document.getElementById("btn-do-logout").addEventListener("click", () => {
+      sessionStorage.removeItem("admin_logged");
+      document.getElementById("admin-pass-input").value = "";
+      document.getElementById("admin-login-box").style.display = "block";
+      document.getElementById("admin-view-box").style.display = "none";
+    });
+
+    function showAdminDashboard() {
+      document.getElementById("admin-login-box").style.display = "none";
+      document.getElementById("admin-view-box").style.display = "block";
+      document.getElementById("admin-date-select").value = adminDate;
+      loadAdminSchedule();
+    }
+
+    document.getElementById("admin-date-select").addEventListener("change", (e) => {
+      adminDate = e.target.value; loadAdminSchedule();
+    });
+
+    document.querySelectorAll("[data-admin-barber]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll("[data-admin-barber]").forEach(b => b.classList.remove("active"));
+        btn.classList.add("active");
+        adminBarber = btn.getAttribute("data-admin-barber");
+        loadAdminSchedule();
+      });
+    });
+
+    async function loadAdminSchedule() {
+      const container = document.getElementById("admin-slots-container");
+      container.innerHTML = `<div class="loader-container"><div class="spinner"></div></div>`;
+      try {
+        const { data, error } = await sb
+          .from('Agendamento')
+          .select('*')
+          .eq('barbeiro', adminBarber)
+          .eq('data_agendamento', adminDate);
+
+        if (error) throw error;
+        const map = {};
+        (data || []).forEach(r => { map[r.horario] = r; });
+
+        let html = "";
+        CONFIG.AVAILABLE_SLOTS.forEach(slot => {
+          const rec = map[slot];
+          if (!rec || rec.status === 'cancelado') {
+            html += `<div class="admin-slot-row status-livre"><div class="slot-time">${slot}</div><div class="slot-client-info"><strong>Livre</strong><span>Disponível</span></div><button class="btn-action-block" onclick="adminBlockSlot('${slot}')">Bloquear</button></div>`;
+          } else if (rec.status === 'confirmado') {
+            html += `<div class="admin-slot-row status-confirmado"><div class="slot-time">${slot}</div><div class="slot-client-info"><strong>${rec.nome_cliente}</strong><span>${rec.servico}</span></div><button class="btn-action-cancel" onclick="adminUpdateStatus('${rec.id}', 'cancelado')">Cancelar</button></div>`;
+          } else if (rec.status === 'bloqueado') {
+            html += `<div class="admin-slot-row status-bloqueado"><div class="slot-time">${slot}</div><div class="slot-client-info"><strong>Bloqueado</strong><span>Manual</span></div><button class="btn-action-unblock" onclick="adminUpdateStatus('${rec.id}', 'cancelado')">Desbloquear</button></div>`;
+          }
+        });
+        container.innerHTML = html;
+      } catch (err) {
+        container.innerHTML = `<div class="error-alert visible">Erro ao carregar agenda.</div>`;
+      }
+    }
+
+    window.adminBlockSlot = async function(slot) {
+      await sb.from('Agendamento').insert([{
+        nome_cliente: "BLOQUEIO", barbeiro: adminBarber, servico: "Bloqueio de Horário", data_agendamento: adminDate, horario: slot, status: "bloqueado"
+      }]);
+      loadAdminSchedule();
+    };
+
+    window.adminUpdateStatus = async function(id, status) {
+      if (!confirm("Confirmar alteração de status?")) return;
+      await sb.from('Agendamento').update({ status }).eq('id', id);
+      loadAdminSchedule();
+    };
+  </script>
+</body>
+</html>
